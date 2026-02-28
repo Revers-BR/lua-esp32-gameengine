@@ -60,18 +60,18 @@ void initializeWiFi()
 
 // XPT2046 Touch Controller setup
 #ifndef TOUCH_CS
-#define TOUCH_CS 33 // fallback default
+#define TOUCH_CS 2 // fallback default
 #endif
 #ifndef TOUCH_IRQ
-#define TOUCH_IRQ 36 // fallback default
+#define TOUCH_IRQ 9 // fallback default
 #endif
 #define CS_PIN TOUCH_CS
 #define T_IRQ_PIN TOUCH_IRQ
 
 #ifdef USE_VSPI
-#define TOUCH_SCLK 25
-#define TOUCH_MISO 39
-#define TOUCH_MOSI 32
+#define TOUCH_SCLK 1
+#define TOUCH_MISO 4
+#define TOUCH_MOSI 3
 SPIClass touchSPI(VSPI); // Use VSPI for the touch controller
 #else
 SPIClass touchSPI(HSPI); // Use HSPI for the touch controller
@@ -98,10 +98,24 @@ void setup()
 #if defined(TFT_BL)
   // Ensure backlight pin is driven on (some boards require explicit control)
   pinMode(TFT_BL, OUTPUT);
-  digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
+  digitalWrite(TFT_BL, HIGH);
 #endif
 
-  tft.setRotation(2);
+#if defined(PWR_ON_PIN) | defined(PWR_EN_PIN)
+
+  pinMode(PWR_ON_PIN, OUTPUT);
+  digitalWrite(PWR_ON_PIN, HIGH);
+
+  delay(10);
+  Serial.println(F("Turn on the main power"));
+
+  Serial.println(F("Power on peripherals, such as the LCD backlight"));
+  pinMode(PWR_EN_PIN, OUTPUT);
+  digitalWrite(PWR_EN_PIN, HIGH);
+
+#endif
+
+  tft.setRotation(0);
   tft.fillScreen(TFT_BLACK);
 
 #ifdef USE_VSPI
@@ -111,7 +125,7 @@ void setup()
 #endif
   ts.begin(touchSPI);
 
-  ts.setRotation(1);
+  ts.setRotation(2);
 
   luaDriver.begin();
 
@@ -202,9 +216,11 @@ void runDiagnostics(const char *message = nullptr)
   }
 #endif
 
+#if ENABLE_WIFI
   Serial.println("================================\n");
   Serial.printf("WiFi parameters:\nSSID: %s\nPassword: %s\n", WIFI_SSID, WIFI_PASSWORD);
   Serial.println("================================\n");
+#endif
 }
 
 void loop()

@@ -7,5 +7,7 @@
 .github/
 .test/
 
+platformio_override.ini
+
 venv/
 __pycache__/

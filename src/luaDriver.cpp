@@ -65,8 +65,8 @@ LuaDriver::~LuaDriver()
 void LuaDriver::begin()
 {
     // Create sprite with display dimensions and 8-bit color depth
-    int w = tft_ ? tft_->width() : 320;
-    int h = tft_ ? tft_->height() : 240;
+    int w = tft_ ? tft_->width() : 240;
+    int h = tft_ ? tft_->height() : 320;
 
 #if DIRTY_TILE_OPTIMIZATION
     // Initialize tile manager
@@ -191,16 +191,16 @@ int LuaDriver::scriptSelectionMenu()
     spr_->setTextColor(TFT_WHITE, TFT_BLACK);
     spr_->setTextSize(2);
 
-    spr_->drawString("Select a Lua script to run:\n\n", 10, 10);
+    spr_->drawString("Select a Lua script to run:\n\n", 10, 1, 2);
     for (int i = 0; i < numScripts; i++)
     {
         if (i >= numScriptNames || script_names[i] == nullptr)
         {
-            spr_->drawString(String(i + 1) + ": Script " + String(i + 1) + "\n", 10, 30 + i * 20);
+            spr_->drawString(String(i + 1) + ": Script " + String(i + 1) + "\n", 10, 30 + i * 30, 2);
             continue;
         }
 
-        spr_->drawString(String(i + 1) + ": " + String(script_names[i]) + "\n", 10, 30 + i * 20);
+        spr_->drawString(String(i + 1) + ": " + String(script_names[i]) + "\n", 10, 30 + i * 30, 2);
     }
     spr_->pushSprite(0, 0);
 
@@ -210,7 +210,7 @@ int LuaDriver::scriptSelectionMenu()
         {
             TS_Point p = ts_->getPoint();
             int y = map(p.y, TS_MIN_Y_CONST, TS_MAX_Y_CONST, 0, tft_->height());
-            int index = (y - 30) / 20;
+            int index = (y - 30) / 30;
             if (index >= 0 && index < numScripts)
             {
                 Serial.printf("Selected script %d\n", index + 1);
