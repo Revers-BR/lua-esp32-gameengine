@@ -856,7 +856,8 @@ void LuaDriver::updateMouseClick()
     if (ts_ && tft_ && ts_->tirqTouched() && ts_->touched())
     {
         TS_Point p = ts_->getPoint();
-        int pixelX = map(p.x, TS_MIN_X_CONST, TS_MAX_X_CONST, 0, tft_->width());
+        // int pixelX = map(p.x, TS_MIN_X_CONST, TS_MAX_X_CONST, 0, tft_->width());
+        int pixelX = tft_->width() - map(p.x, TS_MIN_X_CONST, TS_MAX_X_CONST, 0, tft_->width());
         int pixelY = map(p.y, TS_MIN_Y_CONST, TS_MAX_Y_CONST, 0, tft_->height());
         mouse_click_.button = 0;
         mouse_click_.x = pixelX;

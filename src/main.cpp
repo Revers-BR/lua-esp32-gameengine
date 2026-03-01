@@ -125,7 +125,7 @@ void setup()
 #endif
   ts.begin(touchSPI);
 
-  ts.setRotation(2);
+  ts.setRotation(0);
 
   luaDriver.begin();
 
