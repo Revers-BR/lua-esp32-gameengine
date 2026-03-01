@@ -3,22 +3,34 @@ param(
     [ValidateSet("header","luac")]
     [string]$m,
 
-    [Parameter(Mandatory=$true, ValueFromRemainingArguments=$true)]
+    [Parameter(ValueFromRemainingArguments=$true)]
     [string[]]$InputFiles
 )
 
 function Show-Usage {
-    Write-Host "Usage: .\script.ps1 -m <mode> <input_lua_file(s)>"
+    Write-Host "Usage: .\script.ps1 -m <mode> <input_lua_file(s) | all>"
     Write-Host "  -m <mode>    Mode: header or luac"
     Write-Host "Example: .\script.ps1 -m header .\bouncingBall.lua"
     Write-Host "Example: .\script.ps1 -m header .\file1.lua .\file2.lua"
+    Write-Host "Example: .\script.ps1 -m header all"
     Write-Host "Example: .\script.ps1 -m luac .\bouncingBall.lua"
+    Write-Host "Example: .\script.ps1 -m luac all"
     Write-Host "Note: If you are using mode=luac, make sure luac32.exe is in the same directory as this script."
     exit 1
 }
 
 if (-not $m -or -not $InputFiles) {
     Show-Usage
+}
+
+# Se passar "all", pega todos .lua do diretório atual
+if ($InputFiles.Count -eq 1 -and $InputFiles[0].ToLower() -eq "all") {
+    $InputFiles = Get-ChildItem -Path (Get-Location) -Filter *.lua -File | Select-Object -ExpandProperty FullName
+
+    if (-not $InputFiles) {
+        Write-Host "Error: No .lua files found in current directory."
+        exit 1
+    }
 }
 
 $ExeDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -30,6 +42,7 @@ if ($m -eq "header") {
 
     $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($OutputFile, "", $Utf8NoBom)
+    
     "#ifndef LUASCRIPT_H" | Out-File $OutputFile -Append
     "#define LUASCRIPT_H" | Out-File $OutputFile -Append
     "" | Out-File $OutputFile -Append
@@ -74,10 +87,8 @@ if ($m -eq "header") {
 
         $FileName = [System.IO.Path]::GetFileNameWithoutExtension($InputFile)
 
-        # Split camel case
         $Formatted = [regex]::Replace($FileName, '([a-z])([A-Z])', '$1 $2')
 
-        # Capitalize words
         $Formatted = ($Formatted -split ' ') | ForEach-Object {
             if ($_.Length -gt 1) {
                 $_.Substring(0,1).ToUpper() + $_.Substring(1)

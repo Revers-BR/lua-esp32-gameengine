@@ -187,39 +187,119 @@ int LuaDriver::scriptSelectionMenu()
     const int numScripts = sizeof(lua_scripts) / sizeof(lua_scripts[0]) - 1;
     const int numScriptNames = sizeof(script_names) / sizeof(script_names[0]) - 1;
 
-    spr_->fillScreen(TFT_BLACK);
-    spr_->setTextColor(TFT_WHITE, TFT_BLACK);
-    spr_->setTextSize(2);
-
-    spr_->drawString("Select a Lua script to run:\n\n", 10, 1, 2);
-    for (int i = 0; i < numScripts; i++)
-    {
-        if (i >= numScriptNames || script_names[i] == nullptr)
-        {
-            spr_->drawString(String(i + 1) + ": Script " + String(i + 1) + "\n", 10, 30 + i * 30, 2);
-            continue;
-        }
-
-        spr_->drawString(String(i + 1) + ": " + String(script_names[i]) + "\n", 10, 30 + i * 30, 2);
-    }
-    spr_->pushSprite(0, 0);
+    const int ITEMS_PER_PAGE = 9;
+    int currentPage = 0;
+    int totalPages = (numScripts + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
 
     while (true)
     {
-        if (ts_->touched())
+        spr_->fillScreen(TFT_BLACK);
+        spr_->setTextColor(TFT_WHITE, TFT_BLACK);
+        spr_->setTextSize(2);
+
+        spr_->drawString("Select a Lua script:", 10, 5, 2);
+
+        int startIndex = currentPage * ITEMS_PER_PAGE;
+        int endIndex = min(startIndex + ITEMS_PER_PAGE, numScripts);
+
+        // -------- LISTA --------
+        for (int i = startIndex; i < endIndex; i++)
         {
-            TS_Point p = ts_->getPoint();
-            int y = map(p.y, TS_MIN_Y_CONST, TS_MAX_Y_CONST, 0, tft_->height());
-            int index = (y - 30) / 30;
-            if (index >= 0 && index < numScripts)
+            int y = 30 + (i - startIndex) * 25;
+
+            if (i >= numScriptNames || script_names[i] == nullptr)
+                spr_->drawString(String(i + 1) + ": Script " + String(i + 1), 10, y, 2);
+            else
+                spr_->drawString(String(i + 1) + ": " + String(script_names[i]), 10, y, 2);
+        }
+
+        int buttonY = tft_->height() - 35;
+        int buttonH = 30;
+        int buttonW = 80;
+
+        // -------- BOTÕES (somente se necessário) --------
+        if (numScripts > ITEMS_PER_PAGE)
+        {
+            if (currentPage > 0)
             {
-                Serial.printf("Selected script %d\n", index + 1);
-                spr_->fillScreen(TFT_BLACK);
-                spr_->pushSprite(0, 0);
-                return index;
+                spr_->drawRect(5, buttonY, buttonW, buttonH, TFT_WHITE);
+                spr_->drawCentreString("<<", 5 + buttonW / 2, buttonY, 2);
+            }
+
+            if (currentPage < totalPages - 1)
+            {
+                spr_->drawRect(tft_->width() - buttonW - 5,
+                               buttonY,
+                               buttonW,
+                               buttonH,
+                               TFT_WHITE);
+
+                spr_->drawCentreString(">>",
+                                       tft_->width() - buttonW / 2 - 5,
+                                       buttonY,
+                                       2);
             }
         }
-        delay(100);
+
+        spr_->pushSprite(0, 0);
+
+        // -------- TOUCH LOOP --------
+        while (true)
+        {
+            if (ts_->touched())
+            {
+                TS_Point p = ts_->getPoint();
+
+                int y = map(p.y, TS_MIN_Y_CONST, TS_MAX_Y_CONST, 0, tft_->height());
+                int x = map(p.x, TS_MIN_X_CONST, TS_MAX_X_CONST, tft_->width(), 0);
+
+                // ----- BOTÃO VOLTAR -----
+                if (numScripts > ITEMS_PER_PAGE && currentPage > 0)
+                {
+                    if (x >= 5 && x <= 5 + buttonW &&
+                        y >= buttonY && y <= buttonY + buttonH)
+                    {
+                        currentPage--;
+
+                        while (ts_->touched()) delay(10); // aguarda soltar
+                        break; // redesenha página
+                    }
+                }
+
+                // ----- BOTÃO AVANÇAR -----
+                if (numScripts > ITEMS_PER_PAGE && currentPage < totalPages - 1)
+                {
+                    int bx = tft_->width() - buttonW - 5;
+
+                    if (x >= bx && x <= bx + buttonW &&
+                        y >= buttonY && y <= buttonY + buttonH)
+                    {
+                        currentPage++;
+
+                        while (ts_->touched()) delay(10); // aguarda soltar
+                        break; // redesenha página
+                    }
+                }
+
+                // ----- SELEÇÃO DE SCRIPT -----
+                int relativeIndex = (y - 30) / 25;
+
+                if (relativeIndex >= 0 &&
+                    relativeIndex < (endIndex - startIndex))
+                {
+                    int selected = startIndex + relativeIndex;
+
+                    while (ts_->touched()) delay(10);
+
+                    spr_->fillScreen(TFT_BLACK);
+                    spr_->pushSprite(0, 0);
+
+                    return selected;
+                }
+            }
+
+            delay(20);
+        }
     }
 }
 

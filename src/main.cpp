@@ -94,7 +94,6 @@ void setup()
 {
   Serial.begin(115200);
 
-  tft.init();
 #if defined(TFT_BL)
   // Ensure backlight pin is driven on (some boards require explicit control)
   pinMode(TFT_BL, OUTPUT);
@@ -114,6 +113,10 @@ void setup()
   digitalWrite(PWR_EN_PIN, HIGH);
 
 #endif
+
+  delay(100);
+
+  tft.init();
 
   tft.setRotation(0);
   tft.fillScreen(TFT_BLACK);
